@@ -30,7 +30,7 @@ pub fn edit(
             }
 
             if let Some(location) = &location {
-                shortcut_conf.location = utils::string::normalize_path(location);
+                shortcut_conf.location = utils::string::normalize_path(location)?;
                 res.push_str(&format!("\nLocation: {}", &shortcut_conf.location));
             }
 

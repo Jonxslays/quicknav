@@ -27,7 +27,7 @@ pub fn get(location: String, search: bool) -> Result<i32> {
 
     for shortcut in cfg.shortcuts {
         if shortcut.calls.iter().any(|c| c == &location) {
-            let shortcut_location = utils::string::expand_path(shortcut.location.clone());
+            let shortcut_location = utils::string::expand_path(shortcut.location);
 
             if Path::new(&shortcut_location).exists() {
                 println!("{}", shortcut_location);

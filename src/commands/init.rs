@@ -41,7 +41,7 @@ fn gen_completions(shell: String) -> Result<i32> {
         let mut writer = CompletionWriter::new();
         Quicknav::clap().gen_completions_to("quicknav", shell_profile, &mut writer);
 
-        let completions = writer.to_string();
+        let completions = writer.clone_content();
         drop(writer);
 
         println!(

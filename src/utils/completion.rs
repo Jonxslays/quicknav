@@ -7,7 +7,7 @@ impl CompletionWriter {
         Self { content: String::new() }
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn clone_content(&self) -> String {
         self.content.clone()
     }
 }

@@ -23,7 +23,7 @@ pub fn add(
 
     let mut shortcut_name: String = call.to_string();
     let mut shortcut_description: String = call.to_string();
-    let shortcut_location: String;
+    let shortcut_location = utils::string::normalize_path(&location)?;
 
     if let Some(name) = name {
         shortcut_name = name;
@@ -33,7 +33,6 @@ pub fn add(
         shortcut_description = description;
     }
 
-    shortcut_location = utils::string::normalize_path(&location);
     let new_shortcut = config::Shortcut {
         name: shortcut_name,
         description: shortcut_description,
