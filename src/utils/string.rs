@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use std::env;
+use std::{env, fs};
 
 pub fn to_bool(string: &str) -> Result<bool> {
     match string.to_lowercase().as_str() {
@@ -16,8 +16,6 @@ pub fn to_bool(string: &str) -> Result<bool> {
 
 pub fn normalize_path(path: &str) -> String {
     let mut result: String;
-    let rep: &str;
-    let sep: &str;
 
     if path.starts_with(".") {
         let mut prefix = env::current_dir().unwrap().display().to_string();
@@ -29,16 +27,10 @@ pub fn normalize_path(path: &str) -> String {
             result = prefix;
         }
     } else {
-        result = path.to_string();
+        result = fs::canonicalize(path).unwrap().display().to_string();
     }
 
-    if env::consts::OS == "windows" {
-        rep = "/";
-        sep = "\\";
-    } else {
-        rep = "\\";
-        sep = "/";
-
+    if env::consts::OS != "windows" {
         let home = env::var("HOME").unwrap();
         if result.starts_with(&home) {
             // Only auto-shorten the path to ~ when not on windows
@@ -47,7 +39,7 @@ pub fn normalize_path(path: &str) -> String {
         }
     }
 
-    result.replace(rep, sep)
+    result
 }
 
 pub fn expand_path(path: String) -> String {
