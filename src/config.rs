@@ -38,7 +38,7 @@ impl Config {
         let sep = Config::sep();
         let config_dir = env::var("XDG_CONFIG_HOME")
             .or_else(|_| env::var("HOME").map(|home| format!("{}{}.config", home, sep)))
-            .or_else(|_| env::var("HOMEPATH").map(|home| format!("{}{}.config", home, sep)))
+            .or_else(|_| env::var("USERPROFILE").map(|home| format!("{}{}.config", home, sep)))
             .unwrap();
 
         format!("{}{}quicknav", config_dir, sep)
