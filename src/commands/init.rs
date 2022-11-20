@@ -1,11 +1,10 @@
 use anyhow::Result;
-use gag::BufferRedirect;
 use quicknav::Quicknav;
-use std::io::Read;
 use structopt::clap::Shell;
 use structopt::StructOpt;
 
 use crate::quicknav;
+use crate::utils::CompletionWriter;
 
 fn get_profile(profile: &str, command: &str) -> Result<String> {
     if profile == "default" {
@@ -39,12 +38,11 @@ fn gen_completions(shell: String) -> Result<i32> {
     } else if shell == "zsh" {
         shell_profile = Shell::Bash;
 
-        let mut stdout_buf = BufferRedirect::stdout().unwrap();
-        Quicknav::clap().gen_completions_to("quicknav", shell_profile, &mut std::io::stdout());
+        let mut writer = CompletionWriter::new();
+        Quicknav::clap().gen_completions_to("quicknav", shell_profile, &mut writer);
 
-        let mut completions = String::new();
-        stdout_buf.read_to_string(&mut completions).unwrap();
-        drop(stdout_buf);
+        let completions = writer.to_string();
+        drop(writer);
 
         println!(
             "autoload bashcompinit\nbashcompinit\n\n{}",
