@@ -1,9 +1,7 @@
 use anyhow::{anyhow, Result};
 use colored::*;
-use std::env;
-use std::fs;
 
-use crate::config;
+use crate::{config, utils};
 
 pub fn add(
     call: String,
@@ -11,9 +9,9 @@ pub fn add(
     name: Option<String>,
     description: Option<String>,
 ) -> Result<i32> {
-    let mut config: config::Config = config::Config::load()?;
+    let mut cfg: config::Config = config::Config::load()?;
 
-    for shortcut_conf in &mut config.shortcuts {
+    for shortcut_conf in &mut cfg.shortcuts {
         if shortcut_conf.calls.iter().any(|c| c == &call) {
             return Err(anyhow!(format!(
                 "Shortcut with call {} already exists. Consider using {}.",
@@ -26,7 +24,6 @@ pub fn add(
     let mut shortcut_name: String = call.to_string();
     let mut shortcut_description: String = call.to_string();
     let shortcut_location: String;
-    let cwd = env::current_dir().unwrap().display().to_string();
 
     if let Some(name) = name {
         shortcut_name = name;
@@ -36,18 +33,7 @@ pub fn add(
         shortcut_description = description;
     }
 
-    if location == "." {
-        shortcut_location = cwd;
-    } else if location.starts_with(&env::var("HOME").unwrap()) {
-        shortcut_location = str::replace(&location, &env::var("HOME").unwrap(), "~");
-    } else {
-        shortcut_location = str::replace(
-            &fs::canonicalize(location)?.display().to_string(),
-            &env::var("HOME").unwrap(),
-            "~",
-        );
-    }
-
+    shortcut_location = utils::string::normalize_path(&location);
     let new_shortcut = config::Shortcut {
         name: shortcut_name,
         description: shortcut_description,
@@ -55,19 +41,19 @@ pub fn add(
         calls: vec![call.to_string()],
     };
 
-    config.shortcuts.push(new_shortcut);
-    config.update()?;
+    cfg.shortcuts.push(new_shortcut);
+    cfg.update()?;
     println!("{} {}", "New shortcut added:".green(), &call);
 
     Ok(0)
 }
 
 pub fn add_call(shortcut: String, call: String) -> Result<i32> {
-    let mut config: config::Config = config::Config::load()?;
+    let mut cfg: config::Config = config::Config::load()?;
     let mut found_shortcut = false;
     let mut shortcut_index: usize = 0;
 
-    for (i, shortcut_conf) in &mut config.shortcuts.iter().enumerate() {
+    for (i, shortcut_conf) in &mut cfg.shortcuts.iter().enumerate() {
         if shortcut_conf.name.to_lowercase() == shortcut.to_lowercase() {
             found_shortcut = true;
             shortcut_index = i;
@@ -81,7 +67,7 @@ pub fn add_call(shortcut: String, call: String) -> Result<i32> {
         )));
     }
 
-    for shortcut_conf in &mut config.shortcuts {
+    for shortcut_conf in &mut cfg.shortcuts {
         if shortcut_conf.calls.iter().any(|c| c == &call) {
             return Err(anyhow!(format!(
                 "Call {} already exists on the shortcut named {}.",
@@ -90,8 +76,8 @@ pub fn add_call(shortcut: String, call: String) -> Result<i32> {
         }
     }
 
-    config.shortcuts[shortcut_index].calls.push(call.to_owned());
-    config.update()?;
+    cfg.shortcuts[shortcut_index].calls.push(call.to_owned());
+    cfg.update()?;
     println!("{} {}", "New call added:".green(), &call);
 
     Ok(0)

@@ -6,7 +6,7 @@ use crate::config;
 use crate::utils::string;
 
 pub fn config(option: Option<String>, new_value: Option<String>) -> Result<i32> {
-    let mut config: config::Config = config::Config::load()?;
+    let mut cfg: config::Config = config::Config::load()?;
 
     let mut option_list = Table::new();
     option_list.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
@@ -18,7 +18,7 @@ pub fn config(option: Option<String>, new_value: Option<String>) -> Result<i32> 
 
             match option.as_str() {
                 "create_missing_directories" => {
-                    config.options.create_missing_directories = string::to_bool(&new_value)?;
+                    cfg.options.create_missing_directories = string::to_bool(&new_value)?;
                     value = "create_missing_directories";
                 }
                 _ => return Err(anyhow!("Option not found or is not valid. Use quicknav config to view available options.".to_string()))
@@ -31,7 +31,7 @@ pub fn config(option: Option<String>, new_value: Option<String>) -> Result<i32> 
                 new_value
             );
 
-            config.update()?;
+            cfg.update()?;
             return Ok(0);
         }
 
@@ -39,7 +39,7 @@ pub fn config(option: Option<String>, new_value: Option<String>) -> Result<i32> 
             "create_missing_directories" => {
                 option_list.add_row(row![
                     "create_missing_directories",
-                    config.options.create_missing_directories
+                    cfg.options.create_missing_directories
                 ]);
             }
             _ => {
@@ -53,7 +53,7 @@ pub fn config(option: Option<String>, new_value: Option<String>) -> Result<i32> 
 
     option_list.add_row(row![
         "create_missing_directories",
-        config.options.create_missing_directories
+        cfg.options.create_missing_directories
     ]);
 
     option_list.printstd();

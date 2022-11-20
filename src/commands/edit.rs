@@ -1,9 +1,7 @@
 use anyhow::{anyhow, Result};
 use colored::*;
-use std::env;
-use std::fs;
 
-use crate::config;
+use crate::{config, utils};
 
 pub fn edit(
     shortcut: String,
@@ -11,12 +9,11 @@ pub fn edit(
     name: Option<String>,
     description: Option<String>,
 ) -> Result<i32> {
-    let cwd = env::current_dir().unwrap().display().to_string();
-    let mut config = config::Config::load()?;
+    let mut cfg = config::Config::load()?;
     let mut res = "Shortcut edited: ".green().to_string();
     let mut valid_shortcut = false;
 
-    for shortcut_conf in &mut config.shortcuts {
+    for shortcut_conf in &mut cfg.shortcuts {
         if shortcut_conf.name.to_lowercase() == shortcut.to_lowercase() {
             valid_shortcut = true;
 
@@ -33,19 +30,7 @@ pub fn edit(
             }
 
             if let Some(location) = &location {
-                if location == "." {
-                    shortcut_conf.location = cwd.to_owned();
-                } else if location.starts_with(&env::var("HOME").unwrap()) {
-                    shortcut_conf.location =
-                        str::replace(location, &env::var("HOME").unwrap(), "~");
-                } else {
-                    shortcut_conf.location = str::replace(
-                        &fs::canonicalize(location)?.display().to_string(),
-                        &env::var("HOME").unwrap(),
-                        "~",
-                    );
-                }
-
+                shortcut_conf.location = utils::string::normalize_path(location);
                 res.push_str(&format!("\nLocation: {}", &shortcut_conf.location));
             }
 
@@ -63,7 +48,7 @@ pub fn edit(
         )));
     }
 
-    config.update()?;
+    cfg.update()?;
     println!("{}", res);
 
     Ok(0)

@@ -1,17 +1,16 @@
 use anyhow::{anyhow, Result};
-use std::env::var;
 use std::fs::create_dir_all;
 use std::path::Path;
 
-use crate::config;
+use crate::{config, utils};
 
 pub fn get(location: String, search: bool) -> Result<i32> {
-    let config: config::Config = config::Config::load()?;
+    let cfg: config::Config = config::Config::load()?;
 
     if search {
         let mut possible_shortcuts: Vec<String> = vec![];
 
-        for shortcut in &config.shortcuts {
+        for shortcut in &cfg.shortcuts {
             if shortcut.calls.iter().any(|c| c.starts_with(&location)) {
                 for c in shortcut.calls.iter().cloned() {
                     if c.starts_with(&location) {
@@ -26,16 +25,16 @@ pub fn get(location: String, search: bool) -> Result<i32> {
         return Ok(0);
     }
 
-    for shortcut in config.shortcuts {
+    for shortcut in cfg.shortcuts {
         if shortcut.calls.iter().any(|c| c == &location) {
-            let shortcut_location = shortcut.location.replace('~', &var("HOME").unwrap());
+            let shortcut_location = utils::string::expand_path(shortcut.location.clone());
 
             if Path::new(&shortcut_location).exists() {
-                println!("{}", shortcut.location.replace('~', &var("HOME").unwrap()));
+                println!("{}", shortcut_location);
                 return Ok(0);
             }
 
-            if !config.options.create_missing_directories {
+            if !cfg.options.create_missing_directories {
                 return Err(anyhow!(format!(
                     "Shortcut location does not exist {}. If you would like quicknav to automatically create missing directories for you, enable the option create_missing_directories in your config file.",
                     &shortcut_location,
@@ -44,7 +43,7 @@ pub fn get(location: String, search: bool) -> Result<i32> {
 
             create_dir_all(&shortcut_location)?;
 
-            println!("{}", shortcut.location.replace('~', &var("HOME").unwrap()));
+            println!("{}", shortcut_location);
             return Ok(0);
         }
     }

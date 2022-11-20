@@ -1,5 +1,5 @@
 use anyhow::Result;
-use std::env::var;
+use std::env;
 use std::fs;
 use std::fs::File;
 use std::path::Path;
@@ -26,52 +26,69 @@ pub struct Config {
 }
 
 impl Config {
-    fn generate() -> Result<i32> {
-        let config_folder = var("XDG_CONFIG_HOME")
-            .or_else(|_| var("HOME").map(|home| format!("{}/.config", home)))
-            .unwrap();
-        let config_path = format!("{}/quicknav", config_folder);
+    fn sep<'a>() -> &'a str {
+        if env::consts::OS == "windows" {
+            "\\"
+        } else {
+            "/"
+        }
+    }
 
-        if !Path::new(&config_path).exists() {
-            fs::create_dir_all(&config_path)?;
+    fn get_config_dir_path() -> String {
+        let sep = Config::sep();
+        let config_dir = env::var("XDG_CONFIG_HOME")
+            .or_else(|_| env::var("HOME").map(|home| format!("{}{}.config", home, sep)))
+            .or_else(|_| env::var("HOMEPATH").map(|home| format!("{}{}.config", home, sep)))
+            .unwrap();
+
+        format!("{}{}quicknav", config_dir, sep)
+    }
+
+    fn get_config_file_path() -> String {
+        let config_dir = Config::get_config_dir_path();
+        let sep = Config::sep();
+
+        format!("{}{}quicknav.json", config_dir, sep)
+    }
+
+    fn generate() -> Result<i32> {
+        let config_dir = Config::get_config_dir_path();
+        let config_file = Config::get_config_file_path();
+
+        if !Path::new(&config_dir).exists() {
+            fs::create_dir_all(&config_dir)?;
         }
 
         fs::write(
-            format!("{}/quicknav.json", &config_path),
+            config_file,
             r#"{
-        "shortcuts": [],
-        "options": {
-            "create_missing_directories": false
-        }
-    }"#,
+    "shortcuts": [],
+    "options": {
+        "create_missing_directories": false
+    }
+}"#,
         )?;
 
         Ok(0)
     }
 
     pub fn load() -> Result<Config> {
-        let config_folder = var("XDG_CONFIG_HOME")
-            .or_else(|_| var("HOME").map(|home| format!("{}/.config", home)))
-            .unwrap();
-        let config_path = format!("{}/quicknav/quicknav.json", config_folder);
+        let config_file = Config::get_config_file_path();
 
-        if !Path::new(&config_path).exists() {
+        if !Path::new(&config_file).exists() {
             Config::generate()?;
         }
 
-        let data = File::open(config_path)?;
+        let data = File::open(config_file)?;
         let config: Config = serde_json::from_reader(data)?;
 
         Ok(config)
     }
 
     pub fn update(&self) -> Result<i32> {
-        let config_folder = var("XDG_CONFIG_HOME")
-            .or_else(|_| var("HOME").map(|home| format!("{}/.config", home)))
-            .unwrap();
-        let config_path = format!("{}/quicknav/quicknav.json", config_folder);
+        let config_file = Config::get_config_file_path();
 
-        fs::write(config_path, serde_json::to_string_pretty(self).unwrap())?;
+        fs::write(config_file, serde_json::to_string_pretty(self).unwrap())?;
 
         Ok(0)
     }
